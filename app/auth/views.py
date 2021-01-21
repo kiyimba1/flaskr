@@ -6,7 +6,8 @@ from flask_login import login_user, logout_user, login_required, current_user
 from .. import db
 from ..email import send_email
 from ..models import User
-from .forms import LoginForm, RegistrationForm
+from .forms import LoginForm, RegistrationForm, RequestPasswordReset
+
 
 @auth.before_app_request
 def before_request():
@@ -76,5 +77,24 @@ def resend_confirmation():
     token = current_user.generate_confirmation_token()
     send_email(current_user.email, 'Confirm your Account',
                'auth/email/confirm', user=current_user, token=token)
-    flash('Anew confirmation email has been sent to you by email.')
+    flash('A new confirmation email has been sent to you by email.')
     return redirect(url_for('main.index'))
+
+@auth.route('/reset/password', methods=['GET', 'POST'])
+def send_reset_token():
+    form = RequestPasswordReset()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        token = user.generate_password_reset_token()
+        send_email(user.email, 'Reset Password', 'auth/email/reset', user=user, token=token)
+        flash('A new password reset email has been sent to you by email.')
+    return redirect(url_for('main.index'))
+
+# @auth.route('/reset/password/<token>')
+# def confirm(token):
+#     if user.confirm(token):
+#         db.session.commit()
+#         flash('You have Confirmed your account. Thanks!')
+#     else:
+#         flash('The confirmation link is invalid or as expired.')
+#     return redirect(url_for('main.index'))
