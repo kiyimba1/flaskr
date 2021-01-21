@@ -2,7 +2,7 @@ from flask import current_app
 from flask_sqlalchemy import SQLAlchemy
 from itsdangerous import Serializer
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import UserMixin
+from flask_login import UserMixin, AnonymousUserMixin
 from . import login_manager
 
 from app import db
@@ -132,3 +132,17 @@ class User(UserMixin, db.Model):
 
     def __repr__(self):
         return '<User %r>' % self.username
+
+    def can(self, perm):
+        return self.role is not None and self.role.has_permission(perm)
+
+    def is_administrator(self):
+        return self.can(permission.ADMIN)
+
+class AnonymousUser(AnonymousUserMixin):
+    def can(self, permissions):
+        return False
+    def is_administrator(self):
+        return False
+
+login_manager.anonymous_user = AnonymousUser
